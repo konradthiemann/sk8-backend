@@ -1,0 +1,57 @@
+nelmio_api_doc:
+    documentation:
+        info:
+            title: SK8 Backend API
+            description: |
+                REST API of the SK8 platform (skate, nutrition and habits frontends).
+                All routes except `/api/health` and `/api/doc*` require the `X-Api-Key` header.
+            version: 0.1.0
+        components:
+            securitySchemes:
+                ApiKey:
+                    type: apiKey
+                    in: header
+                    name: X-Api-Key
+            schemas:
+                # Shared error envelopes produced by App\EventListener\ApiExceptionListener.
+                # Declared here (not as PHP DTOs) because the listener answers with plain
+                # arrays for every /api route, so no single controller owns them.
+                ErrorResponse:
+                    type: object
+                    required: [error]
+                    properties:
+                        error:
+                            type: string
+                            description: 'Machine-readable error code in snake_case.'
+                            enum: [unauthorized, not_found, method_not_allowed, bad_request, internal_error]
+                            example: unauthorized
+                Violation:
+                    type: object
+                    required: [field, message]
+                    properties:
+                        field:
+                            type: string
+                            description: 'Property path of the rejected value; array items are indexed.'
+                            example: 'events[0].type'
+                        message:
+                            type: string
+                            description: 'Human-readable message in German.'
+                            example: 'Unbekannter Event-Typ. Erlaubt sind: screen_view, time_on_screen, interaction, navigation.'
+                ValidationErrorResponse:
+                    type: object
+                    required: [error, violations]
+                    properties:
+                        error:
+                            type: string
+                            enum: [validation_failed]
+                            example: validation_failed
+                        violations:
+                            type: array
+                            items:
+                                $ref: '#/components/schemas/Violation'
+        # Applied to every operation unless it declares `security: []` (public routes)
+        security:
+            - ApiKey: []
+    areas: # to filter documented areas
+        path_patterns:
+            - ^/api(?!/doc) # Accepts routes under /api except /api/doc and /api/doc.json

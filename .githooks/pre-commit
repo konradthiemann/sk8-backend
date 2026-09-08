@@ -1,0 +1,6 @@
+#!/bin/sh
+# Blocks the commit unless static analysis, coding standard and tests pass.
+# Activate once per clone with: git config core.hooksPath .githooks  (scripts/setup.sh does this)
+set -e
+cd "$(git rev-parse --show-toplevel)"
+make check

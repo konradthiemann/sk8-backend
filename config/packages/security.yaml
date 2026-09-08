@@ -1,0 +1,23 @@
+# API access without user accounts (ADR-006): one static key in the X-Api-Key header.
+security:
+    firewalls:
+        dev:
+            # Ensure dev tools and static assets are always allowed
+            pattern: ^/(_profiler|_wdt|assets|build)/
+            security: false
+        api:
+            pattern: ^/api
+            stateless: true
+            # Missing credentials on a protected route -> 401 JSON from this entry point
+            entry_point: App\Security\ApiAuthenticationFailureHandler
+            access_token:
+                token_handler: App\Security\ApiKeyAccessTokenHandler
+                token_extractors: App\Security\ApiKeyHeaderExtractor
+                # Rejected key -> 401 JSON as well (same class, same format)
+                failure_handler: App\Security\ApiAuthenticationFailureHandler
+
+    # Note: Only the *first* matching rule is applied
+    access_control:
+        - { path: ^/api/health$, roles: PUBLIC_ACCESS }
+        - { path: ^/api/doc, roles: PUBLIC_ACCESS }
+        - { path: ^/api, roles: ROLE_API }

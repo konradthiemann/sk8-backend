@@ -1,0 +1,8 @@
+# Validation messages are German (ADR-008); see translations/validators.de.yaml
+framework:
+    default_locale: de
+    enabled_locales: ['de']
+    translator:
+        default_path: '%kernel.project_dir%/translations'
+        fallbacks: ['de']
+        providers:

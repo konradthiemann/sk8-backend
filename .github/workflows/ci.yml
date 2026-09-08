@@ -1,0 +1,44 @@
+name: ci
+
+on:
+  push:
+    branches: [main, develop]
+  pull_request:
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    services:
+      postgres:
+        image: postgres:16
+        env:
+          POSTGRES_USER: sk8
+          POSTGRES_PASSWORD: sk8
+          POSTGRES_DB: sk8_backend_test
+        ports:
+          - 5432:5432
+        options: >-
+          --health-cmd "pg_isready -U sk8"
+          --health-interval 5s
+          --health-timeout 5s
+          --health-retries 10
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Build dev image
+        run: make build
+
+      # The app container reaches the Postgres service through the published
+      # host port (host.docker.internal is mapped to the host gateway in compose.yaml).
+      - name: Configure test database
+        run: |
+          echo 'DATABASE_URL="postgresql://sk8:sk8@host.docker.internal:5432/sk8_backend_test?serverVersion=16&charset=utf8"' > .env.test.local
+
+      - name: Install dependencies
+        run: make composer ARGS="install --no-interaction --no-progress --prefer-dist"
+
+      - name: phpstan + php-cs-fixer + phpunit
+        run: make check

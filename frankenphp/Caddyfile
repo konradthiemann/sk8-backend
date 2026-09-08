@@ -1,0 +1,24 @@
+{
+	# TLS is terminated by Railway (or a local proxy); no automatic HTTPS needed.
+	auto_https off
+	{$CADDY_GLOBAL_OPTIONS}
+
+	frankenphp {
+		# Opt into worker mode with FRANKENPHP_CONFIG="worker ./public/index.php"
+		{$FRANKENPHP_CONFIG}
+	}
+}
+
+{$SERVER_NAME} {
+	log {
+		{$CADDY_SERVER_LOG_OPTIONS}
+	}
+
+	root /app/public
+	encode zstd br gzip
+
+	{$CADDY_SERVER_EXTRA_DIRECTIVES}
+
+	# Serve static files, route everything else to public/index.php
+	php_server
+}

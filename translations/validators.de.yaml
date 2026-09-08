@@ -1,0 +1,20 @@
+# German validation messages (ADR-008). Keys are referenced from the Dto classes.
+telemetry:
+  app:
+    blank: 'Die App muss angegeben werden.'
+    invalid: 'Unbekannte App. Erlaubt sind: skate, nutrition, habits.'
+  session_id:
+    blank: 'Die Session-ID muss angegeben werden.'
+    invalid: 'Die Session-ID muss eine gültige UUID sein.'
+  events:
+    min: 'Ein Batch muss mindestens {{ limit }} Event enthalten.'
+    max: 'Ein Batch darf höchstens {{ limit }} Events enthalten.'
+  event:
+    type:
+      blank: 'Der Event-Typ muss angegeben werden.'
+      invalid: 'Unbekannter Event-Typ. Erlaubt sind: screen_view, time_on_screen, interaction, navigation.'
+    screen:
+      blank: 'Der Screen darf nicht leer sein.'
+      too_long: 'Der Screen darf höchstens {{ limit }} Zeichen lang sein.'
+    target:
+      too_long: 'Das Ziel darf höchstens {{ limit }} Zeichen lang sein.'

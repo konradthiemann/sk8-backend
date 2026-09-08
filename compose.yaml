@@ -1,0 +1,21 @@
+# Local development only. Production runs the frankenphp_prod target (see Dockerfile).
+#
+# PostgreSQL is NOT part of this file: it is provided by sk8-infrastructure
+# (docker-compose.yml there) and reached through host.docker.internal.
+#
+# Environment variables are intentionally not set here. Real environment
+# variables take precedence over Symfony's .env files, so anything declared
+# in this file would override .env.local and .env.test (e.g. the test database
+# or the test API key). Defaults live in .env; local overrides in .env.local.
+services:
+  php:
+    build:
+      context: .
+      target: frankenphp_dev
+    volumes:
+      - .:/app
+    ports:
+      - "8000:8000"
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    tty: true

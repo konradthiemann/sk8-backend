@@ -1,0 +1,17 @@
+# phpstan-symfony, phpstan-doctrine, phpstan-strict-rules and phpstan-phpunit
+# are registered automatically by phpstan/extension-installer.
+parameters:
+    level: max
+    paths:
+        - src/
+        - tests/
+        - migrations/
+    # Defines TEST_API_KEY used by the functional tests
+    bootstrapFiles:
+        - tests/bootstrap.php
+    symfony:
+        # Written by bin/console cache:warmup (composer phpstan does this first)
+        containerXmlPath: var/cache/dev/App_KernelDevDebugContainer.xml
+    doctrine:
+        objectManagerLoader: tests/object-manager.php
+    treatPhpDocTypesAsCertain: false

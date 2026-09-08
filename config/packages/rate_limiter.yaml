@@ -1,0 +1,17 @@
+# Cost protection for AI endpoints (ADR-006): 30 requests per hour per client.
+# Not yet applied to any route - the first AI controller will inject
+# RateLimiterFactoryInterface $apiAiLimiter and call consume() per request.
+framework:
+    rate_limiter:
+        api_ai:
+            policy: sliding_window
+            limit: 30
+            interval: '1 hour'
+            cache_pool: cache.rate_limiter
+            # Single-instance deployment: no distributed lock required
+            lock_factory: null
+
+    cache:
+        pools:
+            cache.rate_limiter:
+                adapter: cache.app
