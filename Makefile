@@ -1,13 +1,19 @@
 # Every target runs its command natively when `php` is available on the host,
 # otherwise inside the dev container (docker compose run). Nothing else differs.
+# In CI (GitHub Actions sets CI=true) always use the container: the runner image
+# ships its own PHP, which may be older than what composer.json requires.
 SHELL := /bin/sh
 .DEFAULT_GOAL := help
 
 PHP_BIN := $(shell command -v php 2>/dev/null)
-ifeq ($(PHP_BIN),)
+ifeq ($(CI),true)
 	EXEC := docker compose run --rm --no-deps php
 else
-	EXEC :=
+	ifeq ($(PHP_BIN),)
+		EXEC := docker compose run --rm --no-deps php
+	else
+		EXEC :=
+	endif
 endif
 
 ARGS ?=
