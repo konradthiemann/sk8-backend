@@ -18,3 +18,47 @@ telemetry:
       too_long: 'Der Screen darf höchstens {{ limit }} Zeichen lang sein.'
     target:
       too_long: 'Das Ziel darf höchstens {{ limit }} Zeichen lang sein.'
+skate_session:
+  session_date:
+    blank: 'Das Sitzungsdatum muss angegeben werden und ein gültiges Datum im Format JJJJ-MM-TT sein.'
+    future: 'Das Datum darf nicht in der Zukunft liegen.'
+  started_at:
+    future: 'Der Beginn darf nicht in der Zukunft liegen und muss ein gültiges Datum mit Uhrzeit sein.'
+    other_day: 'Der Beginn muss auf denselben Tag wie das Sitzungsdatum fallen.'
+  duration_minutes:
+    blank: 'Die Dauer muss angegeben werden.'
+    range: 'Die Dauer muss zwischen {{ min }} und {{ max }} Minuten liegen.'
+  location:
+    blank: 'Der Ort darf nicht leer sein.'
+    too_long: 'Der Ort darf höchstens {{ limit }} Zeichen lang sein.'
+  weight:
+    range: 'Das Gewicht muss zwischen {{ min }} und {{ max }} kg liegen.'
+    after_without_before: 'Das Gewicht nach der Einheit setzt ein Gewicht vor der Einheit voraus.'
+  perceived_exertion:
+    range: 'Die empfundene Anstrengung muss zwischen {{ min }} und {{ max }} liegen.'
+  knee_pain:
+    range: 'Der Knieschmerz muss zwischen {{ min }} und {{ max }} liegen.'
+  notes:
+    too_long: 'Die Notiz darf höchstens {{ limit }} Zeichen lang sein.'
+  tricks:
+    max: 'Es dürfen höchstens {{ limit }} Tricks angegeben werden.'
+    duplicate: 'Jeder Trick darf nur einmal vorkommen.'
+  trick:
+    slug:
+      blank: 'Der Trick-Slug darf nicht leer sein.'
+      unknown: 'Unbekannter Trick-Slug. Der Trick muss im Katalog vorhanden sein.'
+    attempts:
+      range: 'Die Versuche müssen zwischen {{ min }} und {{ max }} liegen.'
+    landed:
+      range: 'Die Treffer dürfen nicht negativ sein.'
+      above_attempts: 'Es koennen nicht mehr Treffer als Versuche sein.'
+    notes:
+      too_long: 'Die Notiz darf höchstens {{ limit }} Zeichen lang sein.'
+  list:
+    from:
+      invalid: 'Das Start-Datum muss ein gültiges Datum im Format JJJJ-MM-TT sein.'
+    to:
+      invalid: 'Das End-Datum muss ein gültiges Datum im Format JJJJ-MM-TT sein.'
+    limit:
+      range: 'Das Limit muss zwischen {{ min }} und {{ max }} liegen.'
+    from_after_to: 'Das Start-Datum darf nicht nach dem End-Datum liegen.'

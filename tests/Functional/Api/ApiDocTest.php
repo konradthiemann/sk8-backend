@@ -109,6 +109,22 @@ final class ApiDocTest extends ApiTestCase
         self::assertTrue($meta['additionalProperties'] ?? false);
     }
 
+    /**
+     * T-0201: GET /api/trick-tree must not break `nelmio:apidoc:dump`
+     * (ticket "Tests", ApiDocTest row: "Die neuen Routen brechen
+     * nelmio:apidoc:dump nicht"). This file lists specific paths rather than
+     * asserting the full route list generically, so the new route gets its
+     * own explicit check, same as the existing assertions for /api/health
+     * and /api/telemetry/events above.
+     */
+    public function testItRegistersTheTrickTreeRoute(): void
+    {
+        $paths = self::arrayAt($this->spec(), 'paths');
+
+        self::assertArrayHasKey('/api/trick-tree', $paths);
+        self::assertArrayHasKey('get', self::arrayAt($paths, '/api/trick-tree'));
+    }
+
     public function testItServesTheSwaggerUiWithoutApiKey(): void
     {
         $client = static::createClient();
