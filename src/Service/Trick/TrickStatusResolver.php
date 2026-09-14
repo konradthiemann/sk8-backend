@@ -82,10 +82,7 @@ final class TrickStatusResolver
      */
     private function isMastered(TrickAggregateStats $stats): bool
     {
-        $qualifying = array_values(array_filter(
-            $stats->recentSessions,
-            static fn (array $session): bool => $session['attempts'] >= TrickProgressPolicy::MASTERY_MIN_ATTEMPTS,
-        ));
+        $qualifying = $stats->qualifyingSessions();
 
         if (\count($qualifying) < TrickProgressPolicy::MASTERY_SESSIONS) {
             return false;

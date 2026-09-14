@@ -40,8 +40,10 @@ final readonly class TrickProgressRefresher
      * @param list<Trick>                        $tricks
      * @param array<string, TrickStatus>         $statuses
      * @param array<string, TrickAggregateStats> $stats
+     *
+     * @return array<string, TrickProgress> the now-persisted row per trick id, including freshly created ones (T-0202 design.md §4)
      */
-    public function refresh(array $tricks, array $statuses, array $stats): void
+    public function refresh(array $tricks, array $statuses, array $stats): array
     {
         $existing = $this->repository->findAllIndexedByTrickId();
         $now = new \DateTimeImmutable('now', new \DateTimeZone($this->timezone));
@@ -60,9 +62,12 @@ final readonly class TrickProgressRefresher
             }
 
             $row->applyIfChanged($status, $trickStats->attemptsTotal, $trickStats->landedTotal, $trickStats->firstLandedOn, $now);
+            $existing[$trickId] = $row;
         }
 
         $this->entityManager->flush();
+
+        return $existing;
     }
 
     private static function emptyStats(): TrickAggregateStats

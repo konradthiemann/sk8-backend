@@ -155,6 +155,58 @@ final class TrickProgressRepository extends ServiceEntityRepository
     }
 
     /**
+     * The most recent `$limit` sessions of a single trick, newest first
+     * (T-0202 design.md §2). Unlike recentSessionsByTrickId() (which loads
+     * every trick at once and cuts to size in PHP because it cannot filter
+     * by trick in SQL), a real `LIMIT` clause is enough here: only one trick
+     * is involved. `sessionId` is `IDENTITY(st.skateSession)` - the
+     * skate_session's own id, not the session_trick row's id (the ticket's
+     * example JSON keys the same session across multiple fields by this
+     * UUID).
+     *
+     * @return list<array{sessionId: string, sessionDate: string, attempts: int, landed: int, notes: ?string}>
+     */
+    public function historyByTrickId(Uuid $trickId, int $limit): array
+    {
+        $rows = $this->getEntityManager()->createQuery(<<<'DQL'
+            SELECT
+                IDENTITY(st.skateSession) AS sessionId,
+                ss.sessionDate AS sessionDate,
+                st.attempts AS attempts,
+                st.landed AS landed,
+                st.notes AS notes
+            FROM App\Entity\SessionTrick st
+            JOIN st.skateSession ss
+            WHERE st.trick = :trickId
+            ORDER BY ss.sessionDate DESC, ss.id DESC
+            DQL)
+            ->setParameter('trickId', $trickId)
+            ->setMaxResults($limit)
+            ->getResult();
+
+        $history = [];
+        foreach ($rows as $row) {
+            \assert(\is_array($row));
+
+            $sessionDate = self::toDateImmutable($row['sessionDate']);
+            \assert(null !== $sessionDate, 'session_date is NOT NULL in the database');
+
+            $notes = $row['notes'];
+            \assert(null === $notes || \is_string($notes));
+
+            $history[] = [
+                'sessionId' => self::trickIdKey($row['sessionId']),
+                'sessionDate' => $sessionDate->format('Y-m-d'),
+                'attempts' => (int) $row['attempts'],
+                'landed' => (int) $row['landed'],
+                'notes' => $notes,
+            ];
+        }
+
+        return $history;
+    }
+
+    /**
      * Existing trick_progress rows, indexed by their trick's id
      * (`trick.getId()->toRfc4122()`) - the lookup TrickProgressRefresher
      * needs to decide "update in place" vs. "create new" per trick.

@@ -8,7 +8,6 @@ use App\Entity\Trick;
 use App\Enum\TrickStatus;
 use App\Service\Skate\SessionMetrics;
 use App\Service\Trick\TrickAggregateStats;
-use App\Service\Trick\TrickProgressPolicy;
 use OpenApi\Attributes as OA;
 
 /**
@@ -61,35 +60,10 @@ final readonly class TrickTreeNode
             $stats->attemptsTotal,
             $stats->landedTotal,
             SessionMetrics::successRate($stats->attemptsTotal, $stats->landedTotal),
-            self::recentSuccessRate($stats),
+            $stats->recentSuccessRate(),
             $stats->sessionCount,
             $stats->firstLandedOn?->format('Y-m-d'),
             $stats->lastPracticedOn?->format('Y-m-d'),
-        );
-    }
-
-    /**
-     * A rule of its own, independent of TrickStatusResolver::isMastered()
-     * (design.md §6): pools as many qualifying sessions as exist (0 to
-     * MASTERY_SESSIONS), not only once at least MASTERY_SESSIONS qualify -
-     * "null wenn keine qualifiziert", not "wenn weniger als drei".
-     */
-    private static function recentSuccessRate(TrickAggregateStats $stats): ?float
-    {
-        $qualifying = array_values(array_filter(
-            $stats->recentSessions,
-            static fn (array $session): bool => $session['attempts'] >= TrickProgressPolicy::MASTERY_MIN_ATTEMPTS,
-        ));
-
-        if ([] === $qualifying) {
-            return null;
-        }
-
-        $window = \array_slice($qualifying, 0, TrickProgressPolicy::MASTERY_SESSIONS);
-
-        return SessionMetrics::successRate(
-            (int) array_sum(array_column($window, 'attempts')),
-            (int) array_sum(array_column($window, 'landed')),
         );
     }
 }

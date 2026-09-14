@@ -44,6 +44,26 @@ final readonly class TrickTreeService
 
     public function build(): TrickTreeResponse
     {
+        $snapshot = $this->currentSnapshot();
+
+        return new TrickTreeResponse(
+            $this->buildNodes($snapshot->tricks, $snapshot->statuses, $snapshot->stats),
+            $this->buildEdges($snapshot->tricks),
+            TrickPolicyView::current(),
+            (new \DateTimeImmutable('now', new \DateTimeZone($this->timezone)))->format(\DateTimeInterface::ATOM),
+        );
+    }
+
+    /**
+     * The part of build() every read path needs (T-0202 design.md §4):
+     * load the catalog and the two session-derived aggregates, resolve every
+     * trick's status, and refresh trick_progress - without knowing anything
+     * about GET /api/trick-tree's own response shape. GET /api/tricks/{slug}
+     * and GET /api/trick-recommendation call this directly instead of
+     * duplicating the same four steps.
+     */
+    public function currentSnapshot(): TrickCatalogSnapshot
+    {
         $tricks = $this->trickRepository->findAllOrdered();
         $aggregates = $this->trickProgressRepository->aggregatesByTrickId();
         $recentSessions = $this->trickProgressRepository->recentSessionsByTrickId(self::RECENT_SESSION_WINDOW);
@@ -51,14 +71,9 @@ final readonly class TrickTreeService
         [$stats, $prerequisiteIdsByTrickId] = $this->buildStatsAndPrerequisites($tricks, $aggregates, $recentSessions);
 
         $statuses = $this->statusResolver->resolveAll($stats, $prerequisiteIdsByTrickId);
-        $this->refresher->refresh($tricks, $statuses, $stats);
+        $progressRows = $this->refresher->refresh($tricks, $statuses, $stats);
 
-        return new TrickTreeResponse(
-            $this->buildNodes($tricks, $statuses, $stats),
-            $this->buildEdges($tricks),
-            TrickPolicyView::current(),
-            (new \DateTimeImmutable('now', new \DateTimeZone($this->timezone)))->format(\DateTimeInterface::ATOM),
-        );
+        return new TrickCatalogSnapshot($tricks, $statuses, $stats, $progressRows);
     }
 
     /**
