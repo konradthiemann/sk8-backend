@@ -12,6 +12,8 @@ parameters:
     # local addition) instead of crashing every request that touches NotInFutureValidator.
     app.timezone_default: 'Europe/Berlin'
     app.timezone: '%env(default:app.timezone_default:APP_TIMEZONE)%'
+    # Catalog file App\Command\SyncExercisesCommand reads on every deploy (T-0301 design.md §4).
+    app.exercise_catalog_path: '%kernel.project_dir%/config/data/exercises.json'
 
 services:
     # default configuration for services in *this* file

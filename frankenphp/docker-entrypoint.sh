@@ -33,6 +33,7 @@ if [ "$1" = 'frankenphp' ]; then
 	# Locally, opt in with RUN_MIGRATIONS=1.
 	if [ "${APP_ENV:-}" = 'prod' ] || [ "${RUN_MIGRATIONS:-0}" = '1' ]; then
 		php bin/console doctrine:migrations:migrate --no-interaction --allow-no-migration --all-or-nothing
+		php bin/console app:exercise:sync
 	fi
 fi
 
