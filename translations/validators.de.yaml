@@ -128,3 +128,17 @@ fitness:
       range: 'Das Limit muss zwischen {{ min }} und {{ max }} liegen.'
     offset:
       range: 'Der Offset darf nicht negativ sein.'
+habit_entry:
+  date:
+    invalid: 'Das Datum muss ein gültiges Datum im Format JJJJ-MM-TT sein.'
+    future: 'Du kannst keinen Wert für die Zukunft eintragen.'
+    before_start: 'Das Datum liegt vor dem Projektstart.'
+  value:
+    exactly_one: 'Gib genau einen Wert an.'
+    bool_expected: 'Hier wird Ja oder Nein erwartet.'
+    numeric_expected: 'Hier wird eine Zahl erwartet.'
+    out_of_scale: 'Der Wert muss eine ganze Zahl zwischen {{ min }} und {{ max }} sein.'
+    out_of_range: 'Der Wert muss zwischen {{ min }} und {{ max }} liegen.'
+    not_on_step: 'Der Wert hat eine ungültige Schrittweite; erlaubt sind Vielfache von {{ step }}.'
+  note:
+    too_long: 'Die Notiz darf höchstens {{ limit }} Zeichen lang sein.'

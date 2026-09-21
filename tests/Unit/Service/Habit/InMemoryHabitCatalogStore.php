@@ -16,7 +16,9 @@ use App\Repository\HabitCatalogStoreInterface;
  *
  * The public counters are the assertions' evidence: `$readCount` proves that a
  * rejected catalog never touched the store, `$added` and `$flushCount` prove
- * what a dry run did not write.
+ * what a dry run did not write. `$slugsWithEntries` and `$entryLookupCount`
+ * serve the sync guard of T-0402 (a habit with entries must keep its value
+ * type, unit and scale).
  */
 final class InMemoryHabitCatalogStore implements HabitCatalogStoreInterface
 {
@@ -35,6 +37,14 @@ final class InMemoryHabitCatalogStore implements HabitCatalogStoreInterface
     public int $flushCount = 0;
 
     /**
+     * @var list<string> slugs that "have entries" for the sync guard; empty by default, so every
+     *                   scenario that predates the guard behaves exactly as before
+     */
+    public array $slugsWithEntries = [];
+
+    public int $entryLookupCount = 0;
+
+    /**
      * @param list<Habit> $habits
      */
     public function __construct(array $habits = [])
@@ -49,6 +59,16 @@ final class InMemoryHabitCatalogStore implements HabitCatalogStoreInterface
         ++$this->readCount;
 
         return $this->bySlug;
+    }
+
+    /**
+     * @return list<string>
+     */
+    public function findSlugsWithEntries(): array
+    {
+        ++$this->entryLookupCount;
+
+        return $this->slugsWithEntries;
     }
 
     public function add(Habit $habit): void

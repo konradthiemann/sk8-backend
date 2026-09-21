@@ -319,6 +319,177 @@ final class ApiDocTest extends ApiTestCase
         self::assertSame('boolean', $schema['type'] ?? null);
     }
 
+    /**
+     * T-0402: the three habit entry operations must appear in the published
+     * document with exactly their methods (design.md §3.4).
+     */
+    public function testItRegistersTheHabitEntryAndDayRoutesWithTheirMethods(): void
+    {
+        $paths = self::arrayAt($this->spec(), 'paths');
+
+        $entries = self::arrayAt($paths, '/api/habits/{habitId}/entries/{date}');
+        self::assertArrayHasKey('put', $entries);
+        self::assertArrayHasKey('delete', $entries);
+        foreach (['get', 'post', 'patch'] as $method) {
+            self::assertArrayNotHasKey($method, $entries, "the entry path must not offer {$method}");
+        }
+
+        $day = self::arrayAt($paths, '/api/habits/day');
+        self::assertArrayHasKey('get', $day);
+        foreach (['post', 'put', 'patch', 'delete'] as $method) {
+            self::assertArrayNotHasKey($method, $day, "/api/habits/day must not offer {$method}");
+        }
+    }
+
+    public function testItDocumentsAllStatusCodesOfTheHabitEntryPutOperation(): void
+    {
+        $responses = self::arrayAt($this->spec(), 'paths', '/api/habits/{habitId}/entries/{date}', 'put', 'responses');
+
+        foreach (['200', '201', '400', '401', '404', '415', '422'] as $status) {
+            self::assertArrayHasKey($status, $responses, "PUT must document {$status}");
+        }
+        self::assertSame(
+            '#/components/schemas/HabitEntryResponse',
+            self::arrayAt($responses, '201', 'content', 'application/json', 'schema')['$ref'] ?? null,
+        );
+        self::assertSame(
+            '#/components/schemas/HabitEntryResponse',
+            self::arrayAt($responses, '200', 'content', 'application/json', 'schema')['$ref'] ?? null,
+        );
+        self::assertSame(
+            '#/components/schemas/ValidationErrorResponse',
+            self::arrayAt($responses, '422', 'content', 'application/json', 'schema')['$ref'] ?? null,
+        );
+        self::assertSame(
+            '#/components/schemas/ErrorResponse',
+            self::arrayAt($responses, '404', 'content', 'application/json', 'schema')['$ref'] ?? null,
+        );
+    }
+
+    public function testItDocumentsTheRequestBodyOfTheHabitEntryPutOperation(): void
+    {
+        $schema = self::arrayAt(
+            $this->spec(),
+            'paths',
+            '/api/habits/{habitId}/entries/{date}',
+            'put',
+            'requestBody',
+            'content',
+            'application/json',
+            'schema',
+        );
+
+        self::assertSame('#/components/schemas/HabitEntryRequest', $schema['$ref'] ?? null);
+    }
+
+    public function testItDocumentsAllStatusCodesOfTheHabitEntryDeleteOperation(): void
+    {
+        $responses = self::arrayAt($this->spec(), 'paths', '/api/habits/{habitId}/entries/{date}', 'delete', 'responses');
+
+        foreach (['204', '401', '404', '422'] as $status) {
+            self::assertArrayHasKey($status, $responses, "DELETE must document {$status}");
+        }
+        self::assertSame(
+            '#/components/schemas/ErrorResponse',
+            self::arrayAt($responses, '404', 'content', 'application/json', 'schema')['$ref'] ?? null,
+        );
+    }
+
+    public function testItDocumentsTheStatusCodesOfTheHabitDayOperation(): void
+    {
+        $responses = self::arrayAt($this->spec(), 'paths', '/api/habits/day', 'get', 'responses');
+
+        foreach (['200', '401', '405', '422'] as $status) {
+            self::assertArrayHasKey($status, $responses, "GET /api/habits/day must document {$status}");
+        }
+        self::assertSame(
+            '#/components/schemas/HabitDayResponse',
+            self::arrayAt($responses, '200', 'content', 'application/json', 'schema')['$ref'] ?? null,
+        );
+        self::assertSame(
+            '#/components/schemas/ValidationErrorResponse',
+            self::arrayAt($responses, '422', 'content', 'application/json', 'schema')['$ref'] ?? null,
+        );
+    }
+
+    public function testItDocumentsTheDateAsAQueryParameterOfTheHabitDayOperation(): void
+    {
+        $parameters = self::arrayAt($this->spec(), 'paths', '/api/habits/day', 'get')['parameters'] ?? null;
+        self::assertIsArray($parameters, 'GET /api/habits/day must document its query parameters');
+
+        $date = null;
+        foreach ($parameters as $parameter) {
+            if (\is_array($parameter) && 'date' === ($parameter['name'] ?? null)) {
+                $date = $parameter;
+            }
+        }
+
+        self::assertIsArray($date, 'date must be documented as a parameter');
+        self::assertSame('query', $date['in'] ?? null);
+        $schema = $date['schema'] ?? null;
+        self::assertIsArray($schema);
+        self::assertSame('string', $schema['type'] ?? null);
+    }
+
+    /**
+     * The generated client needs the two path parameters of the entry
+     * operations to call them at all. Whether the documentation generator
+     * derives them from the route on its own was open in design.md §3.4.
+     */
+    public function testItDocumentsTheHabitIdAndTheDateAsPathParametersOfTheEntryOperations(): void
+    {
+        $entries = self::arrayAt($this->spec(), 'paths', '/api/habits/{habitId}/entries/{date}');
+
+        foreach (['put', 'delete'] as $method) {
+            $parameters = $this->parametersOf($entries, $method);
+            foreach (['habitId', 'date'] as $name) {
+                self::assertArrayHasKey($name, $parameters, "{$method} must document the path parameter {$name}");
+                self::assertSame('path', $parameters[$name]['in'] ?? null);
+                self::assertTrue($parameters[$name]['required'] ?? false);
+            }
+        }
+    }
+
+    public function testItListsTheHabitErrorCodesAmongTheKnownErrorCodes(): void
+    {
+        $errorCodes = self::arrayAt($this->spec(), 'components', 'schemas', 'ErrorResponse', 'properties', 'error');
+
+        self::assertIsArray($errorCodes['enum'] ?? null);
+        self::assertContains('habit_not_found', $errorCodes['enum']);
+        self::assertContains('habit_entry_not_found', $errorCodes['enum']);
+    }
+
+    public function testItDescribesTheHabitEntrySchemas(): void
+    {
+        $schemas = self::arrayAt($this->spec(), 'components', 'schemas');
+
+        $request = self::arrayAt($schemas, 'HabitEntryRequest', 'properties');
+        foreach (['valueNumeric', 'valueBool', 'note'] as $field) {
+            self::assertArrayHasKey($field, $request, "HabitEntryRequest must describe {$field}");
+        }
+
+        $response = self::arrayAt($schemas, 'HabitEntryResponse', 'properties');
+        foreach (['id', 'habitId', 'entryDate', 'valueNumeric', 'valueBool', 'note', 'createdAt'] as $field) {
+            self::assertArrayHasKey($field, $response, "HabitEntryResponse must describe {$field}");
+        }
+        self::assertSame('number', self::arrayAt($response, 'valueNumeric')['type'] ?? null);
+    }
+
+    public function testItDescribesTheHabitDaySchemas(): void
+    {
+        $schemas = self::arrayAt($this->spec(), 'components', 'schemas');
+
+        $day = self::arrayAt($schemas, 'HabitDayResponse', 'properties');
+        foreach (['date', 'totalCount', 'completedCount', 'items'] as $field) {
+            self::assertArrayHasKey($field, $day, "HabitDayResponse must describe {$field}");
+        }
+        self::assertSame('array', self::arrayAt($day, 'items')['type'] ?? null);
+
+        $item = self::arrayAt($schemas, 'HabitDayItem', 'properties');
+        self::assertArrayHasKey('habit', $item);
+        self::assertArrayHasKey('entry', $item);
+    }
+
     public function testItServesTheSwaggerUiWithoutApiKey(): void
     {
         $client = static::createClient();
@@ -327,6 +498,31 @@ final class ApiDocTest extends ApiTestCase
 
         self::assertResponseStatusCodeSame(200);
         self::assertStringContainsString('text/html', (string) $client->getResponse()->headers->get('Content-Type'));
+    }
+
+    /**
+     * The parameters of one operation, keyed by name.
+     *
+     * @param array<string, mixed> $pathItem
+     *
+     * @return array<string, array<string, mixed>>
+     */
+    private function parametersOf(array $pathItem, string $method): array
+    {
+        $parameters = self::arrayAt($pathItem, $method)['parameters'] ?? null;
+        self::assertIsArray($parameters, \sprintf('%s must document its parameters', $method));
+
+        $byName = [];
+        foreach ($parameters as $parameter) {
+            self::assertIsArray($parameter);
+            $name = $parameter['name'] ?? null;
+            self::assertIsString($name);
+
+            /** @var array<string, mixed> $parameter */
+            $byName[$name] = $parameter;
+        }
+
+        return $byName;
     }
 
     /**

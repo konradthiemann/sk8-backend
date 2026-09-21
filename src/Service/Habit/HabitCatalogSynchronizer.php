@@ -19,6 +19,12 @@ use App\Repository\HabitCatalogStoreInterface;
  */
 final readonly class HabitCatalogSynchronizer
 {
+    /**
+     * Fields a habit with entries must keep (T-0402 design.md §4.5): changing the value type, the
+     * unit or the scale would silently devalue the recorded history.
+     */
+    private const array GUARDED_FIELDS = ['valueType', 'unit', 'scaleMin', 'scaleMax'];
+
     public function __construct(
         private HabitDefinitionProviderInterface $definitions,
         private HabitCatalogStoreInterface $store,
@@ -75,6 +81,8 @@ final readonly class HabitCatalogSynchronizer
             $changes[] = new HabitChange($slug, HabitChangeKind::Deactivated, []);
         }
 
+        $this->refuseGuardedChangesOfHabitsWithEntries($changes);
+
         if (!$dryRun) {
             $this->apply($toCreate, $toUpdate, $toDeactivate);
         }
@@ -86,6 +94,35 @@ final readonly class HabitCatalogSynchronizer
             unchanged: $unchanged,
             changes: $changes,
         );
+    }
+
+    /**
+     * Runs for a dry run as well, so the preview predicts the refusal. Nothing has been written yet.
+     * The entry lookup only happens when a guarded field changes at all.
+     *
+     * @param list<HabitChange> $changes
+     *
+     * @throws InvalidHabitCatalogException when a habit with entries would change a guarded field
+     */
+    private function refuseGuardedChangesOfHabitsWithEntries(array $changes): void
+    {
+        $guarded = [];
+        foreach ($changes as $change) {
+            if (HabitChangeKind::Updated === $change->kind && [] !== array_intersect(self::GUARDED_FIELDS, $change->fields)) {
+                $guarded[] = $change->slug;
+            }
+        }
+
+        if ([] === $guarded) {
+            return;
+        }
+
+        $affected = array_values(array_intersect($guarded, $this->store->findSlugsWithEntries()));
+        if ([] === $affected) {
+            return;
+        }
+
+        throw new InvalidHabitCatalogException(\sprintf('Die Gewohnheit %s hat bereits Einträge; Werttyp, Einheit und Skala dürfen sich nicht mehr ändern, sonst wird der Verlauf entwertet. Lege stattdessen eine Gewohnheit mit neuem Slug an und entferne den alten Slug aus dem Katalog; er wird dann deaktiviert, seine Einträge bleiben.', implode(', ', array_map(static fn (string $slug): string => '"'.$slug.'"', $affected))));
     }
 
     /**

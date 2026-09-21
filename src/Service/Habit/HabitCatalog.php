@@ -14,7 +14,9 @@ use App\Enum\HabitValueType;
  *
  * Changing a row here changes nothing in the database until
  * `app:habits:sync` runs. Changing a scale or value type of an existing habit
- * breaks its history - add a new habit instead (R-04 §5.2).
+ * breaks its history - add a new habit instead (R-04 §5.2). Once a habit has
+ * entries, HabitCatalogSynchronizer refuses such a change (value type, unit,
+ * scale bounds) instead of applying it.
  */
 final class HabitCatalog implements HabitDefinitionProviderInterface
 {

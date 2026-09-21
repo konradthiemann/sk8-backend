@@ -20,6 +20,14 @@ interface HabitCatalogStoreInterface
      */
     public function findAllIndexedBySlug(): array;
 
+    /**
+     * Slugs of all habits, active and inactive, that have at least one entry
+     * (T-0402 sync guard).
+     *
+     * @return list<string>
+     */
+    public function findSlugsWithEntries(): array;
+
     public function add(Habit $habit): void;
 
     /**

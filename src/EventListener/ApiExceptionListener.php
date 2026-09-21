@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\EventListener;
 
+use App\Exception\ProvidesApiErrorCode;
 use Symfony\Component\DependencyInjection\Attribute\Autowire;
 use Symfony\Component\EventDispatcher\Attribute\AsEventListener;
 use Symfony\Component\HttpFoundation\JsonResponse;
@@ -57,7 +58,9 @@ final readonly class ApiExceptionListener
             $headers = $throwable->getHeaders();
         }
 
-        $body = ['error' => $this->errorCode($statusCode)];
+        $body = ['error' => $throwable instanceof ProvidesApiErrorCode
+            ? $throwable->getApiErrorCode()
+            : $this->errorCode($statusCode)];
 
         $validationFailure = $throwable->getPrevious();
         if (Response::HTTP_UNPROCESSABLE_ENTITY === $statusCode && $validationFailure instanceof ValidationFailedException) {
