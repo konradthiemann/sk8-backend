@@ -62,3 +62,42 @@ skate_session:
     limit:
       range: 'Das Limit muss zwischen {{ min }} und {{ max }} liegen.'
     from_after_to: 'Das Start-Datum darf nicht nach dem End-Datum liegen.'
+training:
+  session_date:
+    blank: 'Das Datum der Einheit muss angegeben werden und ein gültiges Datum im Format JJJJ-MM-TT sein.'
+    future: 'Das Datum darf nicht in der Zukunft liegen.'
+  duration:
+    range: 'Die Dauer muss zwischen {{ min }} und {{ max }} Minuten liegen.'
+  exertion:
+    range: 'Die empfundene Anstrengung muss zwischen {{ min }} und {{ max }} liegen.'
+  knee_pain:
+    range: 'Der Knieschmerz muss zwischen {{ min }} und {{ max }} liegen.'
+  notes:
+    too_long: 'Die Notiz darf höchstens {{ limit }} Zeichen lang sein.'
+  sets:
+    min: 'Eine Einheit muss mindestens {{ limit }} Satz enthalten.'
+    max: 'Eine Einheit darf höchstens {{ limit }} Sätze enthalten.'
+  set:
+    slug:
+      blank: 'Der Übungs-Slug darf nicht leer sein.'
+      invalid: 'Der Übungs-Slug hat ein ungültiges Format.'
+    number:
+      range: 'Die Satznummer muss zwischen {{ min }} und {{ max }} liegen.'
+      duplicate: 'Diese Satznummer gibt es für die Übung schon.'
+    reps:
+      range: 'Die Wiederholungen müssen zwischen {{ min }} und {{ max }} liegen.'
+      measure_mismatch: 'Diese Übung wird in Wiederholungen gezählt.'
+    seconds:
+      range: 'Die Sekunden müssen zwischen {{ min }} und {{ max }} liegen.'
+      measure_mismatch: 'Diese Übung wird in Sekunden gemessen.'
+    side:
+      invalid: 'Unbekannte Seite. Erlaubt sind: links, rechts.'
+      required: 'Gib an, welche Seite du trainiert hast.'
+      not_allowed: 'Diese Übung wird nicht seitengetrennt erfasst.'
+    exercise:
+      unknown: 'Diese Übung kennen wir nicht.'
+  list:
+    limit:
+      range: 'Das Limit muss zwischen {{ min }} und {{ max }} liegen.'
+    offset:
+      range: 'Der Offset darf nicht negativ sein.'

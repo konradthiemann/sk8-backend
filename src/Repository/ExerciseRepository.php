@@ -11,7 +11,7 @@ use Doctrine\Persistence\ManagerRegistry;
 /**
  * @extends ServiceEntityRepository<Exercise>
  */
-final class ExerciseRepository extends ServiceEntityRepository
+final class ExerciseRepository extends ServiceEntityRepository implements ExerciseSlugProviderInterface
 {
     public function __construct(ManagerRegistry $registry)
     {
@@ -56,5 +56,33 @@ final class ExerciseRepository extends ServiceEntityRepository
         }
 
         return $bySlug;
+    }
+
+    /**
+     * Resolves the catalog exercises referenced by a training session's
+     * request payload in one query (T-0302 design.md §3/§4). Called twice,
+     * independently: once by App\Validator\TrainingSetsMatchExercisesValidator
+     * (via ExerciseSlugProviderInterface) to check the request, once by
+     * App\Service\Training\TrainingSessionService to build the entities - the
+     * same deliberate duplication as App\Repository\TrickRepository::findBySlugs().
+     *
+     * @param list<string> $slugs
+     *
+     * @return list<Exercise>
+     */
+    public function findBySlugs(array $slugs): array
+    {
+        if ([] === $slugs) {
+            return [];
+        }
+
+        /** @var list<Exercise> $result */
+        $result = $this->createQueryBuilder('e')
+            ->where('e.slug IN (:slugs)')
+            ->setParameter('slugs', $slugs)
+            ->getQuery()
+            ->getResult();
+
+        return $result;
     }
 }
