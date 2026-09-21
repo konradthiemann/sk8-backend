@@ -218,6 +218,107 @@ final class ApiDocTest extends ApiTestCase
         self::assertArrayHasKey('weakerBalanceSide', $view);
     }
 
+    /**
+     * T-0401: GET /api/habits must appear in the published document, and only
+     * as a read operation - the catalog is maintained by `app:habits:sync`,
+     * never through the API.
+     */
+    public function testItRegistersTheHabitCatalogRouteAsAReadOnlyOperation(): void
+    {
+        $paths = self::arrayAt($this->spec(), 'paths');
+
+        $habits = self::arrayAt($paths, '/api/habits');
+        self::assertArrayHasKey('get', $habits);
+        foreach (['post', 'put', 'patch', 'delete'] as $method) {
+            self::assertArrayNotHasKey($method, $habits, "/api/habits must not offer {$method}");
+        }
+    }
+
+    public function testItReferencesTheResponseAndErrorSchemasOnTheHabitCatalogOperation(): void
+    {
+        $spec = $this->spec();
+
+        // Pairs, not a map: PHP would turn the numeric status keys into integers.
+        $expected = [
+            ['200', '#/components/schemas/HabitListResponse'],
+            ['401', '#/components/schemas/ErrorResponse'],
+            ['405', '#/components/schemas/ErrorResponse'],
+            ['422', '#/components/schemas/ValidationErrorResponse'],
+        ];
+
+        foreach ($expected as [$status, $ref]) {
+            $schema = self::arrayAt(
+                $spec,
+                'paths',
+                '/api/habits',
+                'get',
+                'responses',
+                $status,
+                'content',
+                'application/json',
+                'schema',
+            );
+
+            self::assertSame($ref, $schema['$ref'] ?? null, "status {$status} must reference {$ref}");
+        }
+    }
+
+    /**
+     * The habits UI builds its input fields from this schema alone, so a
+     * field missing here is missing from every generated client type.
+     */
+    public function testItDescribesAllElevenFieldsInTheHabitResponseSchema(): void
+    {
+        $schemas = self::arrayAt($this->spec(), 'components', 'schemas');
+
+        $list = self::arrayAt($schemas, 'HabitListResponse', 'properties', 'habits');
+        self::assertSame('array', $list['type'] ?? null);
+        self::assertSame('#/components/schemas/HabitResponse', self::arrayAt($list, 'items')['$ref'] ?? null);
+
+        $properties = self::arrayAt($schemas, 'HabitResponse', 'properties');
+        foreach (['id', 'slug', 'name', 'valueType', 'unit', 'scaleMin', 'scaleMax', 'targetDirection', 'targetValue', 'sortOrder', 'isActive'] as $field) {
+            self::assertArrayHasKey($field, $properties, "HabitResponse must describe {$field}");
+        }
+    }
+
+    /**
+     * Criterion 10 in the published contract: the DECIMAL column is a number,
+     * not a string, for every generated client.
+     */
+    public function testItDescribesTheHabitTargetValueAsANumber(): void
+    {
+        $targetValue = self::arrayAt($this->spec(), 'components', 'schemas', 'HabitResponse', 'properties', 'targetValue');
+
+        self::assertSame('number', $targetValue['type'] ?? null);
+    }
+
+    public function testItDescribesTheHabitValueTypeAndDirectionAsEnums(): void
+    {
+        $properties = self::arrayAt($this->spec(), 'components', 'schemas', 'HabitResponse', 'properties');
+
+        self::assertEqualsCanonicalizing(['boolean', 'scale', 'number', 'duration'], self::arrayAt($properties, 'valueType')['enum'] ?? null);
+        self::assertEqualsCanonicalizing(['hoch', 'niedrig'], self::arrayAt($properties, 'targetDirection')['enum'] ?? null);
+    }
+
+    public function testItDocumentsIncludeInactiveAsABooleanQueryParameterOnTheHabitCatalog(): void
+    {
+        $parameters = self::arrayAt($this->spec(), 'paths', '/api/habits', 'get')['parameters'] ?? null;
+        self::assertIsArray($parameters, 'GET /api/habits must document its query parameters');
+
+        $includeInactive = null;
+        foreach ($parameters as $parameter) {
+            if (\is_array($parameter) && 'includeInactive' === ($parameter['name'] ?? null)) {
+                $includeInactive = $parameter;
+            }
+        }
+
+        self::assertIsArray($includeInactive, 'includeInactive must be documented as a parameter');
+        self::assertSame('query', $includeInactive['in'] ?? null);
+        $schema = $includeInactive['schema'] ?? null;
+        self::assertIsArray($schema);
+        self::assertSame('boolean', $schema['type'] ?? null);
+    }
+
     public function testItServesTheSwaggerUiWithoutApiKey(): void
     {
         $client = static::createClient();
