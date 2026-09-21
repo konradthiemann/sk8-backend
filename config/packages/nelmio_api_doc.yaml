@@ -23,7 +23,7 @@ nelmio_api_doc:
                         error:
                             type: string
                             description: 'Machine-readable error code in snake_case.'
-                            enum: [unauthorized, not_found, method_not_allowed, bad_request, internal_error]
+                            enum: [unauthorized, not_found, method_not_allowed, bad_request, conflict, internal_error]
                             example: unauthorized
                 Violation:
                     type: object

@@ -125,6 +125,99 @@ final class ApiDocTest extends ApiTestCase
         self::assertArrayHasKey('get', self::arrayAt($paths, '/api/trick-tree'));
     }
 
+    /**
+     * T-0303: the three fitness-assessment operations must appear in the
+     * published document (ticket "Fertig, wenn": "in /api/doc mit Beispielen
+     * dokumentiert"), and only those - the ticket defines no PUT/PATCH and no
+     * single-item GET.
+     */
+    public function testItRegistersTheFitnessAssessmentRoutes(): void
+    {
+        $paths = self::arrayAt($this->spec(), 'paths');
+
+        $collection = self::arrayAt($paths, '/api/fitness-assessments');
+        self::assertArrayHasKey('post', $collection);
+        self::assertArrayHasKey('get', $collection);
+
+        $item = self::arrayAt($paths, '/api/fitness-assessments/{id}');
+        self::assertArrayHasKey('delete', $item);
+        self::assertArrayNotHasKey('put', $item);
+        self::assertArrayNotHasKey('patch', $item);
+    }
+
+    /**
+     * T-0303 is the first endpoint that answers 409. Consumers generate
+     * their client types from ErrorResponse, so without `conflict` in the
+     * enum the generated type would not know the code the API sends.
+     */
+    public function testItListsConflictAmongTheKnownErrorCodes(): void
+    {
+        $errorCodes = self::arrayAt($this->spec(), 'components', 'schemas', 'ErrorResponse', 'properties', 'error');
+
+        self::assertIsArray($errorCodes['enum'] ?? null);
+        self::assertContains('conflict', $errorCodes['enum']);
+    }
+
+    public function testItReferencesTheErrorSchemasOnTheFitnessAssessmentCreateOperation(): void
+    {
+        $spec = $this->spec();
+
+        // Pairs, not a map: PHP would turn the numeric status keys into integers.
+        $expected = [
+            ['401', '#/components/schemas/ErrorResponse'],
+            ['409', '#/components/schemas/ErrorResponse'],
+            ['422', '#/components/schemas/ValidationErrorResponse'],
+        ];
+
+        foreach ($expected as [$status, $ref]) {
+            $schema = self::arrayAt(
+                $spec,
+                'paths',
+                '/api/fitness-assessments',
+                'post',
+                'responses',
+                $status,
+                'content',
+                'application/json',
+                'schema',
+            );
+
+            self::assertSame($ref, $schema['$ref'] ?? null, "status {$status} must reference {$ref}");
+        }
+    }
+
+    /**
+     * The frontends read the eight measurements from these two schemas; a
+     * field missing here (the two later additions are the likely ones) would
+     * silently be absent from every generated client type.
+     */
+    public function testItDescribesAllEightMeasurementsInTheFitnessAssessmentSchemas(): void
+    {
+        $schemas = self::arrayAt($this->spec(), 'components', 'schemas');
+        $measurements = [
+            'pushUpsMax',
+            'squatsMax',
+            'ringPullUpsMax',
+            'plankSeconds',
+            'singleLegBalanceLeftSeconds',
+            'singleLegBalanceRightSeconds',
+            'wallSitSeconds',
+            'standingBroadJumpCm',
+        ];
+
+        foreach (['FitnessAssessmentRequest', 'FitnessAssessmentView'] as $schema) {
+            $properties = self::arrayAt($schemas, $schema, 'properties');
+
+            foreach ($measurements as $measurement) {
+                self::assertArrayHasKey($measurement, $properties, "{$schema} must describe {$measurement}");
+            }
+        }
+
+        $view = self::arrayAt($schemas, 'FitnessAssessmentView', 'properties');
+        self::assertArrayHasKey('balanceDifferenceSeconds', $view);
+        self::assertArrayHasKey('weakerBalanceSide', $view);
+    }
+
     public function testItServesTheSwaggerUiWithoutApiKey(): void
     {
         $client = static::createClient();

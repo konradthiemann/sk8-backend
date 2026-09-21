@@ -101,3 +101,30 @@ training:
       range: 'Das Limit muss zwischen {{ min }} und {{ max }} liegen.'
     offset:
       range: 'Der Offset darf nicht negativ sein.'
+fitness:
+  assessed_on:
+    blank: 'Das Datum des Tests muss angegeben werden und ein gültiges Datum im Format JJJJ-MM-TT sein.'
+    future: 'Das Datum darf nicht in der Zukunft liegen.'
+  push_ups:
+    range: 'Die Liegestütze müssen zwischen {{ min }} und {{ max }} liegen.'
+  squats:
+    range: 'Die Kniebeugen müssen zwischen {{ min }} und {{ max }} liegen.'
+  ring_pull_ups:
+    range: 'Die Klimmzüge müssen zwischen {{ min }} und {{ max }} liegen.'
+  plank:
+    range: 'Die Plank-Zeit muss zwischen {{ min }} und {{ max }} Sekunden liegen.'
+  balance:
+    range: 'Die Standzeit im Einbeinstand muss zwischen {{ min }} und {{ max }} Sekunden liegen.'
+  wall_sit:
+    range: 'Die Wandsitz-Zeit muss zwischen {{ min }} und {{ max }} Sekunden liegen.'
+  broad_jump:
+    range: 'Die Sprungweite muss zwischen {{ min }} und {{ max }} Zentimetern liegen.'
+  notes:
+    too_long: 'Die Notiz darf höchstens {{ limit }} Zeichen lang sein.'
+  values:
+    none: 'Trag mindestens einen Wert ein, sonst gibt es nichts zu vergleichen.'
+  list:
+    limit:
+      range: 'Das Limit muss zwischen {{ min }} und {{ max }} liegen.'
+    offset:
+      range: 'Der Offset darf nicht negativ sein.'
